@@ -2,14 +2,14 @@
 <p align="center">
   <img src="images/carsmallest.gif" />
 </p> -->
-Regeneration
-![](images/regeneration.gif)
-Biped
-![](images/biped.gif)
-Tripod
-![](images/tripod.gif)
-Multiped
-![](images/multiped.gif)
+Regeneration  
+![](images/regeneration.gif)  
+Biped  
+![](images/biped.gif)  
+Tripod  
+![](images/tripod.gif)  
+Multiped  
+![](images/multiped.gif)  
 ## How to run
 <!-- <img src="http://www.sciweavers.org/tex2img.php?eq=%20%5Csqrt%7Bab%7D%20&bc=White&fc=Black&im=tif&fs=12&ff=arev&edit=0" align="center" border="0" alt=" \sqrt{ab} " width="" height="" /> -->
 
