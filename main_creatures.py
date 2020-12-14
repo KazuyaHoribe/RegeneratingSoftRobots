@@ -20,12 +20,8 @@ from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from torch.nn.utils.convert_parameters import (vector_to_parameters, parameters_to_vector)
 
 from GA import GeneticAlgorithm
-from evostra import EvolutionStrategy
 from genotype_net import MorphNet
 from evaluation import run_robot_simulation
-
-#from pymelites.map_elites import MAP_Elites
-#from pymelites.visualizing_generations import plot_generations
 
 # Call Voxelyze
 #sub.call("cp ~/Dropbox/recurrent_evodevo/archive/2d_creatures/_voxcad/voxelyzeMain/voxelyze .", shell=True)
@@ -162,16 +158,6 @@ def main(argv):
       ga = GeneticAlgorithm(model.get_weights(), run_robot_simulation, population_size=args.popsize, sigma=0.1, \
         num_threads=args.threads, folder=args.folder, settings=settings) #0.05 works okay
       ga.run(args.generations, print_step=1)
-    elif args.optimizer=='es':
-      es = EvolutionStrategy(model.get_weights(), ca_fitness, population_size=args.popsize, sigma=0.1,\
-        learning_rate=0.03, decay=0.9999, num_threads=args.threads, folder=args.folder)
-      es.run(args.generations, print_step=1)
-      torch.save(es.get_weights())
-    elif args.optimizer=='me':
-      me = MapElite(model.get_weights(), ca_fitness, population_size=args.popsize, sigma=0.1,\
-         num_threads=args.threads, folder=args.folder)
-      me.run(args.generations, print_step=1)
-      torch.save(me.get_weights())
     else:
       print('No optimizer specified')
 
