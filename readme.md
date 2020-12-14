@@ -15,14 +15,14 @@
 ## How to run
 <!-- <img src="http://www.sciweavers.org/tex2img.php?eq=%20%5Csqrt%7Bab%7D%20&bc=White&fc=Black&im=tif&fs=12&ff=arev&edit=0" align="center" border="0" alt=" \sqrt{ab} " width="" height="" /> -->
 
+Firstly, install Anaconda as python 2.7 distribution on your linux machine.  
+
 ```bash
 # clone project   
 git clone https://github.com/KazuyaHoribe/RegeneratingSoftRobots.git   
 
 # install dependencies    
-Firstly, install Anaconda as python 2.7 distribution on your linux machine.  
-
-cd RegeneratingSoftRobots
+cd RegeneratingSoftRobots 
 pip install -r requirements.txt
 ```
 
