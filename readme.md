@@ -19,7 +19,9 @@
 # clone project   
 git clone https://github.com/KazuyaHoribe/RegeneratingSoftRobots.git   
 
-# install dependencies   
+# install dependencies    
+Firstly, install Anaconda as python 2.7 distribution on your linux machine.  
+
 cd RegeneratingSoftRobots
 pip install -r requirements.txt
 ```
@@ -31,4 +33,3 @@ python main_creatures.py --im_size 7 --number_neighbors 7 --popsize 50 --generat
 
 When you see a locomotion of a virtual creature, you need to build a physical simulator named "VoxCad" following this direction.
 https://github.com/skriegman/evosoro  
-NOTE: This simulator works only on Linux.
