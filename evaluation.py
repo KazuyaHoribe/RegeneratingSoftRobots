@@ -199,3 +199,184 @@ def run_robot_simulation(params, details =False, save_name=""):
 
   #Return fitness
   return fitness, sim, env, generations, individual_id, morphogens, hidden_states_batched_A, hidden_states_batched_B, dev_states, alphalist, cutedgemorphogens, out, past_hidden_states_batched_A, past_hidden_states_batched_B
+
+
+
+def regeneration(params, details =False, save_name=""):
+
+  #Caliculation initial cell states
+  individual_id = params[0][0]
+  w = params[0][1]
+  generations = params[1] 
+  settings = params[2] 
+  run_directory = settings["run_directory"]
+  im_size = settings["im_size"]
+  num_classes = settings["voxel_types"]
+  input_dim = settings["number_neighbors"]
+  
+  if settings['growth_facter']:
+    input_dim = 3*9*2
+    num_classes = settings['voxel_types'] + 1
+
+  # Setting up the simulation object
+  sim = Sim(dt_frac= settings['fraction'], simulation_time=settings['simtime'], fitness_eval_init_time=settings['initime'])
+  # Setting up the environment object
+  env = Env(sticky_floor=0, time_between_traces=0)
+  
+  p = MorphNet(input_dim = input_dim, number_state = num_classes, recurrent = settings['recurrent'])
+
+  vector_to_parameters( torch.tensor (w,dtype=torch.float32 ),  p.parameters() )
+
+  if settings['growth_facter']:
+    morphogens = np.zeros(shape=(2, im_size, im_size, im_size))
+    original_morphogens =np.zeros(shape=(2, im_size, im_size, im_size))
+    cutedgemorphogens = np.zeros(shape=(2, im_size-2, im_size-2, im_size-2))
+    originalcutedgemorphogens = np.zeros(shape=(2, im_size-2, im_size-2, im_size-2))
+  else:
+    cutedgemorphogens = np.zeros(shape=(2, im_size-2, im_size-2, im_size-2))
+    morphogens = np.zeros(shape=(1, im_size, im_size, im_size)) 
+  out = torch.zeros(1, im_size*im_size*im_size, num_classes)
+  dev_states =[]
+  alphalist = []
+
+  sleep_id = []
+  
+  iterations = 10
+
+  hidden_dim = 64
+
+  if settings['data_read']:
+    hidden_states = torch.ones(size=(im_size, im_size, 2, 1, im_size*im_size*im_size, hidden_dim)) #batch_size = im_size*im_size
+    hidden_states_batched_A = torch.ones(size=(1, im_size*im_size*im_size, hidden_dim))   #Hidden layers, batch_size, number units
+    hidden_states_batched_B = torch.ones(size=(1, im_size*im_size*im_size, hidden_dim))
+    max_fitness = params[6]
+  else:
+    hidden_states = torch.ones(size=(im_size, im_size, 2, 1, im_size*im_size*im_size, hidden_dim)) #batch_size = im_size*im_size
+    hidden_states_batched_A = torch.ones(size=(1, im_size*im_size*im_size, hidden_dim))   #Hidden layers, batch_size, number units
+    hidden_states_batched_B = torch.ones(size=(1, im_size*im_size*im_size, hidden_dim))
+    max_fitness = 0
+
+  # Import original morphology
+  original_morphogens = np.load('multiped_morphology.npy')
+
+  # Cutting
+  morphogens =  copy.deepcopy(original_morphogens)
+  morphogens[:,:,:,0:(im_size-1)/2]=0
+  if settings['recurrent']:
+    hidden_states_batched_A = hidden_states_batched_A.reshape(1, im_size, im_size, im_size, hidden_dim)
+    hidden_states_batched_B = hidden_states_batched_B.reshape(1, im_size, im_size, im_size, hidden_dim)
+    hidden_states_batched_A[0,:,:,0:(im_size-1)/2,:] = 1
+    hidden_states_batched_B[0,:,:,0:(im_size-1)/2,:] = 1
+    hidden_states_batched_A = hidden_states_batched_A.reshape(1, im_size**3, hidden_dim)
+    hidden_states_batched_B = hidden_states_batched_B.reshape(1, im_size**3, hidden_dim)
+  morph_tmp = copy.deepcopy(morphogens)
+
+   #Insialize a fitness
+   #Start main loop
+  for it in range(iterations):
+    fitness=0
+  
+    batch_inputs = torch.zeros(im_size*im_size*im_size, input_dim)
+    counter = 0
+    sleep_id = []
+    for i in range(1,im_size-1):
+      for j in range(1,im_size-1):
+        for k in range(1,im_size-1):
+          if settings['growth_facter']:
+            cell_input = torch.flatten (torch.tensor( morphogens[:, i-1:i+2, j-1:j+2, k-1:k+2]  ) )
+          else: 
+            cell_input = torch.tensor( [morphogens[0, i-1, j, k],morphogens[0, i+1, j, k],morphogens[0, i, j+1, k],morphogens[0, i, j-1, k],morphogens[0,i,j,k-1],morphogens[0,i,j,k+1],morphogens[0,i,j,k] ] )
+          batch_inputs[counter] = cell_input
+          counter += 1
+
+    output, hs = p(batch_inputs, (hidden_states_batched_A, hidden_states_batched_B) ) 
+    past_hidden_states_batched_A = hidden_states_batched_A
+    past_hidden_states_batched_B = hidden_states_batched_B
+
+    if not settings['recurrent']: #ALPHA
+      output = output.unsqueeze(0) #
+    # Map out to cell state(0,1,2,3,4)
+    counter = 0 
+    for i in range(1,im_size-1):
+      for j in range(1,im_size-1):
+        for k in range(1,im_size-1):
+
+          cell_alive = (np.amax(morphogens[1, i-1:i+2, j-1:j+2, k-1:k+2 ]))>0.1 #ALPHA 
+
+          if cell_alive: #ALPHA 
+
+            _, idx = output[0, counter].data[:5].max(0)   #ALPHA
+
+            alpha =output[0, counter].data[5]  #ALPHA
+
+            morph_tmp[0, i, j, k] =int( idx.data.numpy() )
+            morph_tmp[1, i, j, k] = F.sigmoid(alpha) #ALPHA   TODO apply function earlier, should be faster
+
+            if settings['recurrent']:
+              hidden_states_batched_A[0, counter] = hs[0][0, counter]
+              hidden_states_batched_B[0, counter] = hs[1][0, counter]
+              out = output
+            out[0] = output
+
+          else:  #ALPHA
+            morph_tmp[:, i, j,k] = 0 #If cell is not alive, set state to 0
+
+            if settings['recurrent']:
+              hidden_states_batched_A[0, counter] = hs[0][0, counter]*0.0
+              hidden_states_batched_B[0, counter] = hs[1][0, counter]*0.0
+          counter += 1
+    #Caliculation each iterartion cell state
+    morpho = morphogens[0][np.newaxis, :, :]
+    alpha = morphogens[1][np.newaxis, :, :]
+    dev_states.append(morpho)
+    alphalist.append(alpha)
+    morphogens = copy.deepcopy(morph_tmp)
+
+
+  #Check connection
+  counter = -1
+  while counter < 0:
+    counter = 0
+    for i in range(1,im_size-1):
+      for j in range(1,im_size-1):
+        for k in range(1,im_size-1):
+          if morphogens[0, i, j, k] != 0:
+            neighbors = np.array([morphogens[0, i-1, j, k], morphogens[0, i+1, j, k], morphogens[0, i, j-1, k], morphogens[0, i, j+1, k], morphogens[0, i, j, k-1], morphogens[0, i, j, k+1]])
+            diagonal = np.array([morphogens[0, i-1, j+1, k-1], morphogens[0, i-1, j+1, k+1],morphogens[0, i-1, j+1, k], morphogens[0, i-1, j, k-1], morphogens[0, i-1, j, k+1], morphogens[0, i-1, j-1, k-1],morphogens[0, i-1, j-1, k+1],morphogens[0, i-1, j-1, k],\
+            morphogens[0, i, j+1, k-1], morphogens[0, i, j+1, k+1], morphogens[0, i, j-1, k-1],morphogens[0, i, j-1, k+1],\
+            morphogens[0, i+1, j+1, k-1], morphogens[0, i+1, j+1, k+1],morphogens[0, i+1, j+1, k], morphogens[0, i+1, j, k-1], morphogens[0, i+1, j, k+1], morphogens[0, i+1, j-1, k-1],morphogens[0, i+1, j-1, k+1],morphogens[0, i+1, j-1, k]])
+            if np.count_nonzero(neighbors) == 0 and np.count_nonzero(diagonal) != 0:
+              morphogens[0, i, j, k] = 0
+              morphogens[1, i, j, k] = 0
+              counter -= 1
+    
+    for i in range(1,im_size-1):
+      for j in range(1,im_size-1):
+        for k in range(1,im_size-1):
+          if morphogens[0, i, j, k] != 0:
+            neighbors = np.array([morphogens[0, i-1, j, k], morphogens[0, i+1, j, k], morphogens[0, i, j-1, k], morphogens[0, i, j+1, k], morphogens[0, i, j, k-1], morphogens[0, i, j, k+1]])
+            diagonal = np.array([morphogens[0, i-1, j+1, k-1], morphogens[0, i-1, j+1, k+1],morphogens[0, i-1, j+1, k], morphogens[0, i-1, j, k-1], morphogens[0, i-1, j, k+1], morphogens[0, i-1, j-1, k-1],morphogens[0, i-1, j-1, k+1],morphogens[0, i-1, j-1, k],\
+            morphogens[0, i, j+1, k-1], morphogens[0, i, j+1, k+1], morphogens[0, i, j-1, k-1],morphogens[0, i, j-1, k+1],\
+            morphogens[0, i+1, j+1, k-1], morphogens[0, i+1, j+1, k+1],morphogens[0, i+1, j+1, k], morphogens[0, i+1, j, k-1], morphogens[0, i+1, j, k+1], morphogens[0, i+1, j-1, k-1],morphogens[0, i+1, j-1, k+1],morphogens[0, i+1, j-1, k]])
+            all_neighbors = np.count_nonzero(neighbors) + np.count_nonzero(diagonal) 
+            if all_neighbors == 0:
+              morphogens[0, i, j, k] = 0
+              morphogens[1, i, j, k] = 0
+
+  
+  cutedgemorphogens[0] = morphogens[0][1:im_size-1,1:im_size-1,1:im_size-1]
+  cutedgemorphogens[1] = morphogens[1][1:im_size-1,1:im_size-1,1:im_size-1]
+
+# Culiculate fitness
+# reshape
+  
+  original_morphogens_list = np.reshape(original_morphogens,(2, im_size**3))
+  morphogens_list = np.reshape(morphogens,(2,im_size**3))
+
+  for i in range(im_size**3):
+    if original_morphogens_list[0,i] == morphogens_list[0,i]:
+      fitness += 1
+    print(original_morphogens_list[0,i], morphogens_list[0,i])
+    print(i,fitness)
+  #Return fitness
+  return fitness, sim, env, generations, individual_id, morphogens, hidden_states_batched_A, hidden_states_batched_B, dev_states, alphalist, cutedgemorphogens, out, past_hidden_states_batched_A, past_hidden_states_batched_B
