@@ -80,8 +80,8 @@ python main_creatures.py
 We used these parameters for each experiments in both recurrent and non-recurrent running.
 Task _ID means the number of independent running.  
 
-# 2D soft robots  
-codes: main_creatures_2d, evaluation_2d, GA_2d, read_write_voxelyze_2d
+### 2D soft robots  
+codes: main_creatures_2d, evaluation_2d, GA_2d, read_write_voxelyze_2d  
 --popsize 300  
 --generations 501  
 --sigma 0.03  
@@ -89,8 +89,8 @@ codes: main_creatures_2d, evaluation_2d, GA_2d, read_write_voxelyze_2d
 --recurrent 0/1 
 --seed TASK_ID  
 
-# 3D soft robots
-codes: main_creatures, evaluation, GA, read_write_voxelyze
+### 3D soft robots
+codes: main_creatures, evaluation, GA, read_write_voxelyze  
 --dimension 1  
 --initial_noise 1  
 --popsize 100  
@@ -100,8 +100,8 @@ codes: main_creatures, evaluation, GA, read_write_voxelyze
 --recurrent 0/1  
 --seed TASK_ID  
 
-# Regeneration task
-codes: regeneration_task
+### Regeneration task
+codes: regeneration_task  
 --popsize 1000  
 --generations 1001  
 --sigma 0.03  
