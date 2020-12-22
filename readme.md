@@ -105,6 +105,6 @@ codes: regeneration_task
 --popsize 1000  
 --generations 1001  
 --sigma 0.03  
---N 200
---recurrent 0/1 
+--N 200  
+--recurrent 0/1  
 --seed TASK_ID  
