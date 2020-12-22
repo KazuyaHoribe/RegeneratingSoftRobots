@@ -37,9 +37,6 @@ class GeneticAlgorithm():
         np.random.seed(self.settings['seed'])
 
         filename="run_"+str(self.settings['seed'])
-        if self.settings['expression']:
-            filename+="_expression"
-
         if self.settings['recurrent']:
             filename+="_recurrent"
 
