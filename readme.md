@@ -4,6 +4,10 @@
 </p> -->
 # Regenerating soft robots through neural cellular automata  
 
+[![Paper](https://img.shields.io/badge/paper-arxiv.2007.02686-B31B1B.svg)](https://arxiv.org/abs/2102.02579)  
+
+</div>
+
 ### Regeneration  
 ![](images/regeneration.gif)  
 ### Biped  
