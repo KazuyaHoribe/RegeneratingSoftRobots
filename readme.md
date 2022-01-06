@@ -6,7 +6,6 @@
 
 [![Paper](https://img.shields.io/badge/paper-arxiv.2007.02686-B31B1B.svg)](https://arxiv.org/abs/2102.02579)  
 
-</div>
 
 ### Regeneration  
 ![](images/regeneration.gif)  
@@ -112,3 +111,12 @@ codes: regeneration_task
 --N 200  
 --recurrent 0/1  
 --seed TASK_ID  
+
+## Regeneration through differential calculation(Update 2022/01/06)
+
+If using this part of code please consider citing the following paper.
+
+> Sudhakaran, Shyam, et al. "Growing 3D Artefacts and Functional Machines with Neural Cellular Automata." arXiv preprint arXiv:2103.08737 (2021).
+
+You can reproduce the results of the paper by running notebook/CustomVoxel.ipynb.
+
